@@ -119,7 +119,7 @@ from LinSATNet import linsat_layer
 ```
 
 ### The ``linsat_layer`` function
-> linsat_layer(x, A=None, b=None, C=None, d=None, E=None, f=None, tau=0.05, max_iter=100, dummy_val=0) [[source]](https://github.com/Thinklab-SJTU/LinSATNet/blob/main/LinSATNet/linsat.py#L11)
+> **LinSATNet.linsat_layer**(x, A=None, b=None, C=None, d=None, E=None, f=None, tau=0.05, max_iter=100, dummy_val=0) [[source]](https://github.com/Thinklab-SJTU/LinSATNet/blob/main/LinSATNet/linsat.py#L11)
 
 LinSAT layer enforces positive linear constraints to the input ``x`` and
 projects it with the constraints
@@ -167,12 +167,15 @@ For more details and formal proofs, please refer to
 Let's start with the classic Sinkhorn algorithm. Given non-negative score matrix
 $`\mathbf{S}\in\mathbb{R}_{\geq 0}^{m\times n}`$ and a set of marginal
 distributions on rows $`\mathbf{v}\in \mathbb{R}_{\geq 0}^m`$ and columns
-$`\mathbf{u} \in \mathbb{R}_{\geq 0}^n`$ (where
-$$\sum_{i=1}^m v_i = \sum_{j=1}^n u_j = h$$),
+$`\mathbf{u} \in \mathbb{R}_{\geq 0}^n`$, where
+$$\sum_{i=1}^m v_i = \sum_{j=1}^n u_j = h,$$
 the Sinkhorn algorithm outputs a normalized matrix
 $`\mathbf{\Gamma}\in[0,1]^{m\times n}`$ so that
-$$\sum_{i=1}^m \Gamma_{i,j}u_{j}=u_j, \sum_{j=1}^n \Gamma_{i,j}u_{j}=v_i$$.
+$$\sum_{i=1}^m \Gamma_{i,j}u_{j}=u_j, \sum_{j=1}^n \Gamma_{i,j}u_{j}=v_i.$$
 Conceptually, $`\Gamma_{i,j}`$ means the **proportion** of $`u_j`$ moved to $`v_i`$.
+
+> If you are seeing the math formulas not rendered correctly, it is [an issue of github](https://github.com/orgs/community/discussions/17051).
+> Please refer to [our main paper](https://runzhong.wang/files/icml2023_LinSATNet.pdf) for better view.
 
 The algorithm steps are:
 
@@ -239,7 +242,7 @@ Initialize $`\Gamma_{i,j}=\frac{s_{i,j}}{\sum_{i=1}^m s_{i,j}}`$
 
 $`\quad`$**repeat**:
 
-$`\qquad`$**for**$`\eta=1`$**to**$k$**do**
+$`\qquad`$**for** $`\eta=1`$ **to** $k$ **do**
 
 $`\quad\qquad{\Gamma}_{i,j}^{\prime} = \frac{{\Gamma}_{i,j}v_{\eta,i}}{\sum_{j=1}^n {\Gamma}_{i,j}u_{\eta,j}}`$; $`\triangleright`$ normalize w.r.t. $`\mathbf{v}_\eta`$
 
@@ -281,51 +284,46 @@ marginals.
 
 * **Packing constraint** $`\mathbf{A}\mathbf{x}\leq \mathbf{b}`$. Assuming that
   there is only one constraint, we rewrite the constraint as
-  $$\sum_{i=1}^l a_ix_i \leq b$$. The marginal distributions are defined as
-
-```math
-  \mathbf{u}_p = \underbrace{\left[a_1 \quad a_2 \quad ...\quad a_l \quad b\right]}_{l \text{ dims}+1 \text{ dummy dim}}, \quad
-  \mathbf{v}_p^\top = [b \quad \sum_{i=1}^l a_i]
-```
-
+  $$\sum_{i=1}^l a_ix_i \leq b.$$ 
   Following the "transportation" view of Sinkhorn, the output $`\mathbf{x}`$
   _moves_ at most $`b`$ unit of mass from $`a_1, a_2, \cdots, a_l`$, and the
   dummy dimension allows the inequality by _moving_ mass from the dummy
   dimension. It is also ensured that the sum of $`\mathbf{u}_p`$ equals the sum
-  of $`\mathbf{v}_p`$.
+  of $`\mathbf{v}_p`$. The marginal distributions are defined as
+
+```math
+  \mathbf{u}_p = \underbrace{\left[a_1 \quad a_2 \quad ...\quad a_l \quad b\right]}_{l \text{ dims}+1 \text{ dummy dim}}, \quad \mathbf{v}_p^\top = \left[b \quad \sum_{i=1}^l a_i \right]
+```
 
 * **Covering constraint** $`\mathbf{C}\mathbf{x}\geq \mathbf{d}`$. Assuming that
   there is only one constraint, we rewrite the constraint as
-  $$\sum_{i=1}^l c_ix_i\geq d$$. The marginal distributions are defined as
+  $$\sum_{i=1}^l c_ix_i\geq d.$$ We introduce the multiplier 
+  $$\gamma=\left\lfloor\sum_{i=1}^lc_i / d \right\rfloor$$
+  because we always have $$\sum_{i=1}^l c_i \geq d$$ (else the
+  constraint is infeasible), and we cannot reach the feasible solution where all
+  elements in $`\mathbf{x}`$ are 1s without this multiplier. Our formulation
+  ensures that at least $`d`$ unit of mass is _moved_ from $`c_1, c_2, \cdots, c_l`$
+  by $`\mathbf{x}`$, thus representing the covering constraint of "greater than".
+  It is also ensured that the sum of $`\mathbf{u}_c`$ equals the sum of
+  $`\mathbf{v}_c`$. The marginal distributions are defined as
   
 ```math
   \mathbf{u}_c = \underbrace{\left[c_1 \quad c_2 \quad ...\quad c_l \quad \gamma d\right]}_{l \text{ dims} + 1 \text{ dummy dim}}, \quad
   \mathbf{v}_c^\top = \left[ (\gamma+1) d  \quad \sum_{i=1}^l c_i - d \right]
 ```
 
-  where the multiplier $$\gamma=\left\lfloor\sum_{i=1}^lc_i / d \right\rfloor$$
-  is necessary because we always have $$\sum_{i=1}^l c_i \geq d$$ (else the
-  constraint is infeasible), and we cannot reach the feasible solution where all
-  elements in $`\mathbf{x}`$ are 1s without this multiplier. This formulation
-  ensures that at least $`d`$ unit of mass is _moved_ from $`c_1, c_2, \cdots, c_l`$
-  by $`\mathbf{x}`$, thus representing the covering constraint of "greater than".
-  It is also ensured that the sum of $`\mathbf{u}_c`$ equals the sum of
-  $`\mathbf{v}_c`$.
-
 * **Equality constraint** $`\mathbf{E}\mathbf{x}= \mathbf{f}`$. Representing the
   equality constraint is more straightforward. Assuming that there is only one
-  constraint, we rewrite the constraint as $$\sum_{i=1}^l e_ix_i= f$$. The
-  marginal distributions are defined as
+  constraint, we rewrite the constraint as $$\sum_{i=1}^l e_ix_i= f.$$ The 
+  output $`\mathbf{x}`$ _moves_ $`e_1, e_2, \cdots, e_l`$ to $`f`$, and we need 
+  no dummy element in $`\mathbf{u}_e`$ because it is an equality constraint. It 
+  is also ensured that the sum of $`\mathbf{u}_e`$ equals the sum of 
+  $`\mathbf{v}_e`$. The marginal distributions are defined as
 
 ```math
 \mathbf{u}_e = \underbrace{\left[e_1 \quad e_2 \quad ...\quad e_l \quad 0\right]}_{l \text{ dims} + \text{dummy dim}=0}, \quad
 \mathbf{v}_e^\top = \left[f \quad \sum_{i=1}^l e_i - f \right]
 ```
-
-  where the output $`\mathbf{x}`$ _moves_ $`e_1, e_2, \cdots, e_l`$ to $`f`$,
-  and we need no dummy element in $`\mathbf{u}_e`$ because it is an equality
-  constraint. It is also ensured that the sum of $`\mathbf{u}_e`$ equals the
-  sum of $`\mathbf{v}_e`$.
 
 After encoding all constraints and stack them as multiple sets of marginals,
 we can call the Sinkhorn algorithm for multi-set marginals to enforce the
