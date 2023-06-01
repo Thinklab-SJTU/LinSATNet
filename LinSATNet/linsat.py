@@ -18,7 +18,7 @@ def linsat_layer(x, A=None, b=None, C=None, d=None, E=None, f=None, tau=0.05, ma
     :param b, d, f: (n_c)
     :param tau: parameter to control hard/soft constraint
     :param max_iter: max number of iterations
-    :return:
+    :return: (n_v) or (b x n_v), the projected variables
     """
     if len(x.shape) == 1:
         x = x.unsqueeze(0)
@@ -140,13 +140,11 @@ def linsat_layer(x, A=None, b=None, C=None, d=None, E=None, f=None, tau=0.05, ma
 if __name__ == '__main__':
     import pygmtools as pygm
     pygm.BACKEND = 'pytorch'
-    import cvxpy as cp
-    from cvxpylayers.torch import CvxpyLayer
     import time
     import itertools
 
     # This example shows how to encode doubly-stochastic constraint for 3x3 variables
-    A = torch.tensor(
+    E = torch.tensor(
         [[1, 1, 1, 0, 0, 0, 0, 0, 0],
          [0, 0, 0, 1, 1, 1, 0, 0, 0],
          [0, 0, 0, 0, 0, 0, 1, 1, 1],
@@ -154,114 +152,39 @@ if __name__ == '__main__':
          [0, 1, 0, 0, 1, 0, 0, 1, 0],
          [0, 0, 1, 0, 0, 1, 0, 0, 1]], dtype=torch.float32
     )
-    b = torch.tensor([1, 1, 1, 1, 1, 1], dtype=torch.float32)
-    s = torch.rand(9) # s could be the output of neural network
+    f = torch.tensor([1, 1, 1, 1, 1, 1], dtype=torch.float32)
+
+    w = torch.rand(9) # w could be the output of neural network
+    w = w.requires_grad_(True)
 
     x_gt = torch.tensor(
         [1, 0, 0,
          0, 1, 0,
          0, 0, 1], dtype=torch.float32
     )
-    s = s.requires_grad_(True)
-    opt = torch.optim.SGD([s], lr=0.1, momentum=0.9)
 
     # Test with LinSAT
     prev_time = time.time()
-    linsat_outp = linsat_layer(s, E=A, f=b, tau=0.1, max_iter=10, dummy_val=0)
+    linsat_outp = linsat_layer(w, E=E, f=f, tau=0.1, max_iter=10, dummy_val=0)
     print(f'LinSAT forward time: {time.time() - prev_time:.4f}')
     prev_time = time.time()
     loss = ((linsat_outp - x_gt) ** 2).sum()
     loss.backward()
-    linsat_grad = s.grad.clone()
-    opt.zero_grad()
     print(f'LinSAT backward time: {time.time() - prev_time:.4f}')
-
-    # Test LinSAT with different iterations
-    linsat_outps = []
-    linsat_grads = []
-    max_iters = range(5, 30, 5)
-    for max_iter in max_iters:
-        x = linsat_layer(s, E=A, f=b, tau=0.1, max_iter=max_iter, dummy_val=0)
-        linsat_outps.append(x.clone())
-        loss = ((x - x_gt) ** 2).sum()
-        loss.backward()
-        linsat_grads.append(s.grad.clone())
-        opt.zero_grad()
-
-    multiplier = 10 ** torch.ceil(torch.log10(1 / torch.sum((linsat_outps[0] - linsat_outps[-1]) ** 2)))
-    print(f'forward difference (LinSAT, different max_iter) x{multiplier:.0f}')
-    for x in linsat_outps:
-        line = []
-        for y in linsat_outps:
-            line.append(f'{torch.sum((x - y)**2) * multiplier:.2f}')
-        print(' | '.join(line))
-
-    multiplier = 10 ** torch.ceil(torch.log10(1 / torch.sum((linsat_grads[0] - linsat_grads[-1]) ** 2)))
-    print(f'backward difference (LinSAT, different max_iter) x{multiplier:.0f}')
-    for x in linsat_grads:
-        line = []
-        for y in linsat_grads:
-            line.append(f'{torch.sum((x - y)**2) * multiplier:.6f}')
-        print(' | '.join(line))
-
-    # Test with classic Sinkhorn
-    prev_time = time.time()
-    classic_sk_outp = pygm.sinkhorn(s.reshape(3, 3), tau=0.1).reshape(-1)
-    print(f'Sinkhorn time: {time.time() - prev_time:.4f}')
-    prev_time = time.time()
-    loss = ((classic_sk_outp - x_gt) ** 2).sum()
-    loss.backward()
-    classic_sk_grad = s.grad.clone()
-    opt.zero_grad()
-    print(f'Sinkhorn backward time: {time.time() - prev_time:.4f}')
-
-    # Test with cvxpy
-    def get_opt_layer(num_var, num_constr, tau):
-        """
-        Get a CVXPY differentiable optimization layer
-        """
-        varX = cp.Variable(num_var)
-        paramW = cp.Parameter(num_var)
-        constrA = cp.Parameter((num_constr, num_var))
-        constrb = cp.Parameter(num_constr)
-        obj = cp.Maximize(cp.sum(cp.multiply(varX, paramW) + tau * cp.entr(varX)))
-        cons = [constrA @ varX <= constrb, varX >= 0, varX <= 1]
-        prob = cp.Problem(obj, cons)
-        opt_layer = CvxpyLayer(prob, parameters=[paramW, constrA, constrb], variables=[varX])
-        return opt_layer
-    prev_time = time.time()
-    cvxpylayer = get_opt_layer(9, 6, 0.1)
-    cvxpy_outp, = cvxpylayer(s, A, b)
-    print(f'CVXPY time: {time.time() - prev_time:.4f}')
-    prev_time = time.time()
-    loss = ((cvxpy_outp - x_gt) ** 2).sum()
-    loss.backward()
-    cvxpy_grad = s.grad.clone()
-    opt.zero_grad()
-    print(f'CVXPY backward time: {time.time() - prev_time:.4f}')
-
-    # Compute difference
-    print('forward difference')
-    for x, y in itertools.combinations([linsat_outp, classic_sk_outp, cvxpy_outp], 2):
-        print(torch.sum((x - y)**2))
-
-    print('backward difference')
-    for x, y in itertools.combinations([linsat_grad, classic_sk_grad, cvxpy_grad], 2):
-        print(torch.sum((x - y)**2))
 
     # Test gradient-based optimization
     niters = 10
-    with torch.autograd.set_detect_anomaly(True):
-        for i in range(niters):
-            x = linsat_layer(s, E=A, f=b, tau=0.1, max_iter=10, dummy_val=0)
-            cv = torch.matmul(A, x.t()).t() - b.unsqueeze(0)
-            loss = ((x - x_gt) ** 2).sum()
-            loss.backward()
-            opt.step()
-            opt.zero_grad()
-            print(f'{i}/{niters}\n'
-                  f'  OT obj={torch.sum(s * x)},\n'
-                  f'  loss={loss},\n'
-                  f'  sum(constraint violation)={torch.sum(cv[cv > 0])},\n'
-                  f'  x={x},\n'
-                  f'  constraint violation={cv}')
+    opt = torch.optim.SGD([w], lr=0.1, momentum=0.9)
+    for i in range(niters):
+        x = linsat_layer(w, E=E, f=f, tau=0.1, max_iter=10, dummy_val=0)
+        cv = torch.matmul(E, x.t()).t() - f.unsqueeze(0)
+        loss = ((x - x_gt) ** 2).sum()
+        loss.backward()
+        opt.step()
+        opt.zero_grad()
+        print(f'{i}/{niters}\n'
+              f'  underlying obj={torch.sum(w * x)},\n'
+              f'  loss={loss},\n'
+              f'  sum(constraint violation)={torch.sum(cv[cv > 0])},\n'
+              f'  x={x},\n'
+              f'  constraint violation={cv}')
