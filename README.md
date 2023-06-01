@@ -123,25 +123,23 @@ from LinSATNet import linsat_layer
 
 LinSAT layer enforces positive linear constraints to the input ``x`` and
 projects it with the constraints
-```
-A x <= b, C x >= d, E x == f
-```
-and all elements in ``A, b, C, d, E, f`` must be non-negative.
+$$\mathbf{A} \mathbf{x} <= \mathbf{b}, \mathbf{C} \mathbf{x} >= \mathbf{d}, \mathbf{E} \mathbf{x} = \mathbf{f}$$
+and all elements in $\mathbf{A}, \mathbf{b}, \mathbf{C}, \mathbf{d}, \mathbf{E}, \mathbf{f}$ must be non-negative.
 
 **Parameters:**
-* ``x``: PyTorch tensor of size (``n_v``), it can optionally have a batch size (``b x n_v``)
-* ``A``, ``C``, ``E``: PyTorch tensor of size (``n_c x n_v``), constraint matrix on the left hand side
-* ``b``, ``d``, ``f``: PyTorch tensor of size (``n_c``), constraint vector on the right hand side
+* ``x``: PyTorch tensor of size ($n_v$), it can optionally have a batch size ($b \times n_v$)
+* ``A``, ``C``, ``E``: PyTorch tensor of size ($n_c \times n_v$), constraint matrix on the left hand side
+* ``b``, ``d``, ``f``: PyTorch tensor of size ($n_c$), constraint vector on the right hand side
 * ``tau``: (``default=0.05``) parameter to control the discreteness of the projection. Smaller value leads to more discrete (harder) results, larger value leads to more continuous (softer) results.
 * ``max_iter``: (``default=100``) max number of iterations
 * ``dummy_val``: (``default=0``) the value of dummy variables appended to the input vector
 
-**return:** PyTorch tensor of size (``n_v``) or (``b x n_v``), the projected variables
+**return:** PyTorch tensor of size ($n_v$) or ($b \times n_v$), the projected variables
 
 Notations:
-* ``b`` means the batch size.
-* ``n_c`` means the number of constraints (``A``, ``C``, ``E`` may have different ``n_c``s)
-* ``n_v`` means the number of variables
+* $b$ means the batch size.
+* $n_c$ means the number of constraints ($\mathbf{A}$, $\mathbf{C}$, $\mathbf{E}$ may have different $`n_c`$s)
+* $n_v$ means the number of variables
 
 ### Some practical notes
 
