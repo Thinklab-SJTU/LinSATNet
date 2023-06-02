@@ -21,6 +21,25 @@ And get started by
 from LinSATNet import linsat_layer
 ```
 
+### Table of contents
+
+- [LinSATNet](#linsatnet)
+  * [A Quick Example](#a-quick-example)
+  * [API Reference](#api-reference)
+    + [The ``linsat_layer`` function](#the---linsat-layer---function)
+    + [Some practical notes](#some-practical-notes)
+  * [How it works?](#how-it-works-)
+    + [Classic Sinkhorn with single-set marginals](#classic-sinkhorn-with-single-set-marginals)
+    + [Extended Sinkhorn with multi-set marginals](#extended-sinkhorn-with-multi-set-marginals)
+    + [Transforming positive linear constraints into marginals](#transforming-positive-linear-constraints-into-marginals)
+      - [Encoding neural network's output](#encoding-neural-network-s-output)
+      - [From linear constraints to marginals](#from-linear-constraints-to-marginals)
+  * [More Complicated Use Cases (appeared in our paper)](#more-complicated-use-cases--appeared-in-our-paper-)
+    + [I. Neural Solver for Traveling Salesman Problem with Extra Constraints](#i-neural-solver-for-traveling-salesman-problem-with-extra-constraints)
+    + [II. Partial Graph Matching with Outliers on Both Sides](#ii-partial-graph-matching-with-outliers-on-both-sides)
+    + [III. Portfolio Allocation](#iii-portfolio-allocation)
+  * [Citation](#citation)
+
 ## A Quick Example
 
 There is a quick example if you run ``LinSATNet/linsat.py`` directly. In this
@@ -145,8 +164,9 @@ Notations:
 
 1. You must ensure that your input constraints have a non-empty feasible space.
 Otherwise, ``linsat_layer`` will not converge.
-2. You may tune the value of ``tau`` for your specific tasks. Reasonable choices
-of ``tau`` may range from ``1e-4`` to ``100`` in our experience.
+2. You may tune the value of ``tau`` for your specific tasks. Monitor the output
+of LinSAT so that the "smoothness" of the output meets your task. Reasonable
+choices of ``tau`` may range from ``1e-4`` to ``100`` in our experience.
 3. Be careful of potential numerical issues. Sometimes ``A x <= 1`` does not
 work, but ``A x <= 0.999`` works.
 4. The input vector ``x`` may have a batch dimension, but the constraints can
@@ -284,7 +304,7 @@ marginals.
 
 * **Packing constraint** $`\mathbf{A}\mathbf{x}\leq \mathbf{b}`$. Assuming that
   there is only one constraint, we rewrite the constraint as
-  $$\sum_{i=1}^l a_ix_i \leq b.$$ 
+  $$\sum_{i=1}^l a_ix_i \leq b.$$
   Following the "transportation" view of Sinkhorn, the output $`\mathbf{x}`$
   _moves_ at most $`b`$ unit of mass from $`a_1, a_2, \cdots, a_l`$, and the
   dummy dimension allows the inequality by _moving_ mass from the dummy
@@ -297,7 +317,7 @@ marginals.
 
 * **Covering constraint** $`\mathbf{C}\mathbf{x}\geq \mathbf{d}`$. Assuming that
   there is only one constraint, we rewrite the constraint as
-  $$\sum_{i=1}^l c_ix_i\geq d.$$ We introduce the multiplier 
+  $$\sum_{i=1}^l c_ix_i\geq d.$$ We introduce the multiplier
   $$\gamma=\left\lfloor\sum_{i=1}^lc_i / d \right\rfloor$$
   because we always have $$\sum_{i=1}^l c_i \geq d$$ (else the
   constraint is infeasible), and we cannot reach the feasible solution where all
@@ -306,7 +326,7 @@ marginals.
   by $`\mathbf{x}`$, thus representing the covering constraint of "greater than".
   It is also ensured that the sum of $`\mathbf{u}_c`$ equals the sum of
   $`\mathbf{v}_c`$. The marginal distributions are defined as
-  
+
 ```math
   \mathbf{u}_c = \underbrace{\left[c_1 \quad c_2 \quad ...\quad c_l \quad \gamma d\right]}_{l \text{ dims} + 1 \text{ dummy dim}}, \quad
   \mathbf{v}_c^\top = \left[ (\gamma+1) d  \quad \sum_{i=1}^l c_i - d \right]
@@ -314,10 +334,10 @@ marginals.
 
 * **Equality constraint** $`\mathbf{E}\mathbf{x}= \mathbf{f}`$. Representing the
   equality constraint is more straightforward. Assuming that there is only one
-  constraint, we rewrite the constraint as $$\sum_{i=1}^l e_ix_i= f.$$ The 
-  output $`\mathbf{x}`$ _moves_ $`e_1, e_2, \cdots, e_l`$ to $`f`$, and we need 
-  no dummy element in $`\mathbf{u}_e`$ because it is an equality constraint. It 
-  is also ensured that the sum of $`\mathbf{u}_e`$ equals the sum of 
+  constraint, we rewrite the constraint as $$\sum_{i=1}^l e_ix_i= f.$$ The
+  output $`\mathbf{x}`$ _moves_ $`e_1, e_2, \cdots, e_l`$ to $`f`$, and we need
+  no dummy element in $`\mathbf{u}_e`$ because it is an equality constraint. It
+  is also ensured that the sum of $`\mathbf{u}_e`$ equals the sum of
   $`\mathbf{v}_e`$. The marginal distributions are defined as
 
 ```math
@@ -331,7 +351,58 @@ constraints.
 
 ## More Complicated Use Cases (appeared in our paper)
 
-To be updated soon.
+### I. Neural Solver for Traveling Salesman Problem with Extra Constraints
+
+The Traveling Salesman Problem (TSP) is a classic NP-hard problem. The standard
+TSP aims at finding a cycle visiting all cities with minimal length, and
+developing neural solvers for TSP receives increasing interes. Beyond standard
+TSP, here we develop a neural solver for TSP with extra constraints using LinSAT
+layer.
+
+**Contributing author: Yunhao Zhang**
+
+Details will be updated soon.
+
+### II. Partial Graph Matching with Outliers on Both Sides
+
+Standard graph matching (GM) assumes an outlier-free setting namely bijective
+mapping. One-shot GM neural networks
+[(Wang et al., 2022)](https://ieeexplore.ieee.org/abstract/document/9426408/)
+effectively enforce the satisfiability of one-to-one matching constraint by
+single-set Sinkhorn. Partial GM refers to the realistic case with outliers on
+both sides so that only a partial set of nodes are matched. There lacks a
+principled approach to enforce matching constraints for partial GM. The main
+challenge for existing GM networks is that they cannot discard outliers because
+the single-set Sinkhorn is outlier-agnostic and tends to match as many nodes as
+possible. The only exception is BBGM
+[(Rolinek et al., 2020)](https://link.springer.com/chapter/10.1007/978-3-030-58604-1_25)
+which incorporates a traditional solver that can reject outliers, yet its
+performance still has room for improvement.
+
+**Contributing author: Ziao Guo**
+
+To run the GM experiment, please follow the code and instructions in
+[ThinkMatch/LinSAT](https://github.com/Thinklab-SJTU/ThinkMatch/tree/master/models/LinSAT).
+
+### III. Portfolio Allocation
+
+Predictive portfolio allocation is the process of selecting the best asset
+allocation based on predictions of future financial markets. The goal is to
+design an allocation plan to best trade-off between the return and the potential
+risk (i.e. the volatility). In an allocation plan, each asset is assigned a
+non-negative weight and all weights should sum to 1. Existing learning-based
+methods [(Zhang et al., 2020)](https://arxiv.org/pdf/2005.13665.pdf),
+[(Butler et al., 2021)](https://www.tandfonline.com/doi/abs/10.1080/14697688.2022.2162432)
+only consider the sum-to-one constraint without introducing personal preference
+or expert knowledge. In contrast, we achieve such flexibility for the target
+portfolio via positive linear constraints: a mix of covering and equality
+constraints, which is widely considered for its real-world demand.
+
+**Contributing author: Tianyi Chen**
+
+To run the portfolio experiment, please follow the code and instructions in
+[``portfolio_opt/``](portfolio_opt).
+
 
 ## Citation
 If you find our paper/code useful in your research, please cite
