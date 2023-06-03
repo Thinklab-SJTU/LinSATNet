@@ -401,7 +401,7 @@ constraints, which is widely considered for its real-world demand.
 **Contributing author: Tianyi Chen**
 
 To run the portfolio experiment, please follow the code and instructions in
-[``portfolio_opt/``](portfolio_opt).
+[``portfolio_exp/``](portfolio_exp).
 
 
 ## Citation
