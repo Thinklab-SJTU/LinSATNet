@@ -36,9 +36,24 @@ here = os.path.abspath(os.path.dirname(__file__))
 
 # Import the README and use it as the long-description.
 # Note: this will only work if 'README.md' is present in your MANIFEST.in file!
+# The contents in `skip_sections` will be ingored.
+skip_sections = ['### Table of contents',
+                 '## How it works?',
+                 '## More Complicated Use Cases (appeared in our paper)']
 try:
     with io.open(os.path.join(here, 'README.md'), encoding='utf-8') as f:
-        long_description = '\n' + f.read()
+        long_description = '\n'
+        skip_sec_level = -1
+        for line in f.readlines():
+            if line.strip() in skip_sections:
+                skip_sec_level = line.count('#')
+            elif skip_sec_level > 0:
+                if line[0] == '#':
+                    cur_sec_level = line.count('#')
+                    if cur_sec_level <= skip_sec_level:
+                        skip_sec_level = -1
+            if skip_sec_level < 0:
+                long_description += line
 except FileNotFoundError:
     long_description = DESCRIPTION
 

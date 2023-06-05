@@ -5,7 +5,7 @@ This is the official implementation of our ICML 2023 paper "LinSATNet: The Posit
 
 With LinSATNet, you can enforce the satisfiability of general **positive linear constraints** to the output of neural networks.
 
-![usecase](figures/usecase.png)
+![usecase](https://github.com/Thinklab-SJTU/LinSATNet/blob/main/figures/usecase.png?raw=true)
 
 The LinSAT layer is fully differentiable, and the gradients are exactly computed. Our implementation now supports PyTorch.
 
@@ -157,7 +157,7 @@ and all elements in $\mathbf{A}, \mathbf{b}, \mathbf{C}, \mathbf{d}, \mathbf{E},
 
 Notations:
 * $b$ means the batch size.
-* $n_c$ means the number of constraints ($\mathbf{A}$, $\mathbf{C}$, $\mathbf{E}$ may have different $n_c$)
+* $n_c$ means the number of constraints ($\mathbf{A}$, $\mathbf{C}$, $\mathbf{E}$ may have different $`n_c`$s)
 * $n_v$ means the number of variables
 
 ### Some practical notes
