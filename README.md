@@ -61,7 +61,7 @@ The doubly-stochastic constraint means that all rows and columns of the matrix
 should sum to 1.
 
 The 3x3 matrix is flattened into a vector, and the following positive
-linear constraints are considered (for $`\mathbf{E}\mathbf{x}=\mathbf{f}`$):
+linear constraints are considered (for $\mathbf{E}\mathbf{x}=\mathbf{f}$):
 ```python
 E = torch.tensor(
     [[1, 1, 1, 0, 0, 0, 0, 0, 0],
@@ -157,7 +157,7 @@ and all elements in $\mathbf{A}, \mathbf{b}, \mathbf{C}, \mathbf{d}, \mathbf{E},
 
 Notations:
 * $b$ means the batch size.
-* $n_c$ means the number of constraints ($\mathbf{A}$, $\mathbf{C}$, $\mathbf{E}$ may have different $`n_c`$s)
+* $n_c$ means the number of constraints ($\mathbf{A}$, $\mathbf{C}$, $\mathbf{E}$ may have different $n_c$)
 * $n_v$ means the number of variables
 
 ### Some practical notes
