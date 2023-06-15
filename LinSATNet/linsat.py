@@ -75,8 +75,12 @@ def linsat_layer(x, A=None, b=None, C=None, d=None, E=None, f=None, tau=0.05, ma
     A = torch.cat((A, C, E), dim=0) # n_c x n_v
     b = torch.cat((b, d, f), dim=0) # n_c x 2
 
+    if torch.any(b == 0):
+        b += 1e-7  # handle numerical issue
+
     # normalize values
-    assert torch.all(A.sum(dim=-1) == b.sum(dim=-1))
+    if not torch.all(torch.abs(A.sum(dim=-1) - b.sum(dim=-1)) < 1e-4):
+        raise RuntimeError('Marginal distributions are not matched! Please report this issue on GitHub.')
     A = A / A.sum(dim=-1, keepdim=True)
     b = b / b.sum(dim=-1, keepdim=True)
 
@@ -96,6 +100,11 @@ def linsat_layer(x, A=None, b=None, C=None, d=None, E=None, f=None, tau=0.05, ma
     log_A = torch.log(A)
     log_b = torch.log(b)
 
+    if torch.any(torch.isinf(log_b)): raise RuntimeError('Inf encountered in log_b!')
+    if torch.any(torch.isnan(log_A)): raise RuntimeError('Nan encountered in log_A!')
+    if torch.any(torch.isnan(log_b)): raise RuntimeError('Nan encountered in log_b!')
+
+    # Multi-set marginal Sinkhorn iterations
     for i in range(max_iter):
         for j in range(num_constr):
             _log_x = torch.cat((log_x, log_dum_x1[j]), dim=-1) # batch x n_v
