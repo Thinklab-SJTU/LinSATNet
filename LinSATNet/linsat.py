@@ -38,18 +38,24 @@ def linsat_layer(x, A=None, b=None, C=None, d=None, E=None, f=None, tau=0.05, ma
     batch_size = x.shape[0]
     num_var = x.shape[1]
     num_constr = 0
+
     def init_shape(mat, vec, num_constr):
         if mat is not None:
-            assert vec is not None
-            assert torch.all(mat >= 0), 'all constraints must be non-negative!'
-            assert torch.all(vec >= 0), 'all constraints must be non-negative!'
+            if vec is None: raise ValueError('You must specify A-b, C-d, E-f together in pairs!')
+            if torch.any(mat < 0): raise ValueError('All constraints must be non-negative!')
+            if torch.any(vec < 0): raise ValueError('All constraints must be non-negative!')
+            if torch.any(torch.sum(mat, dim=1) == 0): raise ValueError('All-zero constraint is found!')
             num_constr += mat.shape[0]
-            assert vec.shape[0] == mat.shape[0]
-            assert mat.shape[1] == num_var
+            if vec.shape[0] != mat.shape[0]:
+                raise ValueError(f'Input shapes do not match! Got {mat.shape} and {vec.shape}')
+            if mat.shape[1] != num_var:
+                raise ValueError(
+                    f'Input shapes do not match! Got {mat.shape} but the number of variables is {num_var}.')
         else:
             mat = torch.zeros(0, num_var, device=device)
             vec = torch.zeros(0, device=device)
         return mat, vec, num_constr
+
     A, b, num_constr = init_shape(A, b, num_constr)
     C, d, num_constr = init_shape(C, d, num_constr)
     E, f, num_constr = init_shape(E, f, num_constr)
