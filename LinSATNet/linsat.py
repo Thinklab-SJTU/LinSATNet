@@ -8,7 +8,7 @@ import torch
 import sys
 
 
-def linsat_layer(x, A=None, b=None, C=None, d=None, E=None, f=None, tau=0.05, max_iter=100, dummy_val=0):
+def linsat_layer(x, A=None, b=None, C=None, d=None, E=None, f=None, tau=0.05, max_iter=100, dummy_val=0, mode='v1'):
     """
     Project x with the constraints A x <= b, C x >= d, E x = f.
     All elements in A, b, C, d, E, f must be non-negative.
@@ -18,6 +18,8 @@ def linsat_layer(x, A=None, b=None, C=None, d=None, E=None, f=None, tau=0.05, ma
     :param b, d, f: (n_c)
     :param tau: parameter to control hard/soft constraint
     :param max_iter: max number of iterations
+    :param dummy_val: value of dummy variable
+    :param mode: v1 or v2
     :return: (n_v) or (b x n_v), the projected variables
     """
     if len(x.shape) == 1:
@@ -84,6 +86,23 @@ def linsat_layer(x, A=None, b=None, C=None, d=None, E=None, f=None, tau=0.05, ma
     A = A / A.sum(dim=-1, keepdim=True)
     b = b / b.sum(dim=-1, keepdim=True)
 
+    if mode == 'v1':
+        kernel = linsat_kernel_v1
+    elif mode == 'v2':
+        kernel = linsat_kernel_v2
+    else:
+        raise ValueError(f'Unknown mode {mode}')
+
+    x = kernel(x, A, b, tau, max_iter, dummy_val,
+               batch_size, num_var, num_constr, ori_A, ori_b, ori_C, ori_d, ori_E, ori_f)
+
+    if vector_input:
+        x.squeeze_(0)
+    return x
+
+
+def linsat_kernel_v1(x, A, b, tau, max_iter, dummy_val,
+                     batch_size, num_var, num_constr, ori_A, ori_b, ori_C, ori_d, ori_E, ori_f):
     # add dummy variables
     dum_x1 = []
     dum_x2 = []
@@ -147,9 +166,77 @@ def linsat_layer(x, A=None, b=None, C=None, d=None, E=None, f=None, tau=0.05, ma
         print('Warning: non-zero constraint violation within max iterations. Add more iterations or infeasible?',
               file=sys.stderr)
 
-    if vector_input:
-        log_x.squeeze_(0)
     return torch.exp(log_x)
+
+
+def linsat_kernel_v2(x, A, b, tau, max_iter, dummy_val,
+                     batch_size, num_var, num_constr, ori_A, ori_b, ori_C, ori_d, ori_E, ori_f):
+    # add dummy variables
+    dum_x1 = []
+    for j in range(num_constr):
+        dum_x1.append(torch.full((batch_size, 2, 1), dummy_val, dtype=x.dtype, device=x.device))
+    dum_x2 = torch.full((batch_size, num_var), dummy_val, dtype=x.dtype, device=x.device)
+
+    # operations are performed on log scale
+    log_x = x / tau
+    log_dum_x1 = [d / tau for d in dum_x1]
+    log_dum_x2 = dum_x2 / tau
+
+    # perform a row norm first
+    log_x = torch.stack((log_x, log_dum_x2), dim=1) # batch x 2 x n_v
+    log_sum = torch.logsumexp(log_x, 1, keepdim=True)  # batch x 1 x (n_v+1)
+    log_x = log_x - log_sum
+
+    log_A = torch.log(A)
+    log_b = torch.log(b)
+
+    if torch.any(torch.isinf(log_b)): raise RuntimeError('Inf encountered in log_b!')
+    if torch.any(torch.isnan(log_A)): raise RuntimeError('Nan encountered in log_A!')
+    if torch.any(torch.isnan(log_b)): raise RuntimeError('Nan encountered in log_b!')
+
+    # Multi-set marginal Sinkhorn iterations
+    for i in range(max_iter):
+        num_sat_constrs = 0
+        for j in range(num_constr):
+            _log_x = torch.cat((log_x, log_dum_x1[j]), dim=-1) # batch x 2 x (n_v+1)
+
+            nonzero_indices = torch.where(A[j] != 0)[0]
+
+            log_nz_x = _log_x[:, :, nonzero_indices]
+
+            log_nz_Aj = log_A[j][nonzero_indices].unsqueeze(0).unsqueeze(0)
+
+            log_sum = torch.logsumexp(log_nz_x + log_nz_Aj, 2, keepdim=True) # batch x 2 x 1
+            if torch.all(torch.abs(log_sum - log_b[j].unsqueeze(0).unsqueeze(-1)) < 1e-3):
+                num_sat_constrs += 1
+                continue
+            log_nz_x = log_nz_x - log_sum + log_b[j].unsqueeze(0).unsqueeze(-1)
+
+            log_sum = torch.logsumexp(log_nz_x, 1, keepdim=True) # batch x 1 x (n_v+1)
+            log_nz_x = log_nz_x - log_sum
+
+            if A[j][-1] != 0:
+                scatter_idx = nonzero_indices[:-1].unsqueeze(0).unsqueeze(1).repeat(batch_size, 2, 1)
+                log_x = torch.scatter(log_x, -1, scatter_idx, log_nz_x[:, :, :-1])
+                log_dum_x1[j] = log_nz_x[:, :, -1:]
+            else:
+                scatter_idx = nonzero_indices.unsqueeze(0).unsqueeze(1).repeat(batch_size, 2, 1)
+                log_x = torch.scatter(log_x, -1, scatter_idx, log_nz_x[:, :, :])
+
+        if num_sat_constrs == num_constr:
+            break
+
+    x = torch.exp(log_x[:, 0, :]) # remove dummy row & transform from log scale
+
+    with torch.no_grad():
+        cv_Ab = torch.matmul(ori_A, x.t()).t() - ori_b.unsqueeze(0)
+        cv_Cd = -torch.matmul(ori_C, x.t()).t() + ori_d.unsqueeze(0)
+        cv_Ef = torch.abs(torch.matmul(ori_E, x.t()).t() - ori_f.unsqueeze(0))
+        if torch.sum(cv_Ab[cv_Ab > 0]) + torch.sum(cv_Cd[cv_Cd > 0]) + torch.sum(cv_Ef[cv_Ef > 0]) > 0.1 * batch_size:
+            print('Warning: non-zero constraint violation within max iterations. Add more iterations or infeasible?',
+                  file=sys.stderr)
+
+    return x
 
 
 if __name__ == '__main__':
