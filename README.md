@@ -34,7 +34,7 @@ from LinSATNet import linsat_layer
     + [Transforming positive linear constraints into marginals](#transforming-positive-linear-constraints-into-marginals)
       - [Encoding neural network's output](#encoding-neural-network-s-output)
       - [From linear constraints to marginals](#from-linear-constraints-to-marginals)
-  * [More Complicated Use Cases (appeared in our paper)](#more-complicated-use-cases--appeared-in-our-paper-)
+  * [More Complicated Use Cases (appeared in our paper)](#more-complicated-use-cases-appeared-in-our-paper)
     + [I. Neural Solver for Traveling Salesman Problem with Extra Constraints](#i-neural-solver-for-traveling-salesman-problem-with-extra-constraints)
     + [II. Partial Graph Matching with Outliers on Both Sides](#ii-partial-graph-matching-with-outliers-on-both-sides)
     + [III. Portfolio Allocation](#iii-portfolio-allocation)
