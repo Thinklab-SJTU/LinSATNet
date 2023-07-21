@@ -138,7 +138,7 @@ from LinSATNet import linsat_layer
 ```
 
 ### The ``linsat_layer`` function
-> **LinSATNet.linsat_layer**(x, A=None, b=None, C=None, d=None, E=None, f=None, tau=0.05, max_iter=100, dummy_val=0, mode='v1') [[source]](https://github.com/Thinklab-SJTU/LinSATNet/blob/main/LinSATNet/linsat.py#L11)
+> **LinSATNet.linsat_layer**(x, A=None, b=None, C=None, d=None, E=None, f=None, tau=0.05, max_iter=100, dummy_val=0, mode='v1', no_warning=False) [[source]](https://github.com/Thinklab-SJTU/LinSATNet/blob/main/LinSATNet/linsat.py#L11)
 
 LinSAT layer enforces positive linear constraints to the input ``x`` and
 projects it with the constraints
@@ -153,6 +153,7 @@ and all elements in $\mathbf{A}, \mathbf{b}, \mathbf{C}, \mathbf{d}, \mathbf{E},
 * ``max_iter``: (``default=100``) max number of iterations
 * ``dummy_val``: (``default=0``) the value of dummy variables appended to the input vector
 * ``mode``: (``default='v1'``) EXPERIMENTAL the mode of LinSAT kernel. ``v2`` is sometimes faster than ``v1``.
+* ``no_warning``: (``default=False``) turn off warning message
 
 **return:** PyTorch tensor of size ($n_v$) or ($b \times n_v$), the projected variables
 

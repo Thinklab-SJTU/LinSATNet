@@ -8,7 +8,8 @@ import torch
 import sys
 
 
-def linsat_layer(x, A=None, b=None, C=None, d=None, E=None, f=None, tau=0.05, max_iter=100, dummy_val=0, mode='v1'):
+def linsat_layer(x, A=None, b=None, C=None, d=None, E=None, f=None, tau=0.05, max_iter=100, dummy_val=0,
+                 mode='v1', no_warning=False):
     """
     Project x with the constraints A x <= b, C x >= d, E x = f.
     All elements in A, b, C, d, E, f must be non-negative.
@@ -20,6 +21,7 @@ def linsat_layer(x, A=None, b=None, C=None, d=None, E=None, f=None, tau=0.05, ma
     :param max_iter: max number of iterations
     :param dummy_val: value of dummy variable
     :param mode: v1 or v2
+    :param no_warning: turn off warning message
     :return: (n_v) or (b x n_v), the projected variables
     """
     if len(x.shape) == 1:
@@ -162,7 +164,8 @@ def linsat_kernel_v1(x, A, b, tau, max_iter, dummy_val,
             break
         last_log_x = log_x
 
-    if torch.sum(cv_Ab[cv_Ab > 0]) + torch.sum(cv_Cd[cv_Cd > 0]) + torch.sum(cv_Ef[cv_Ef > 0]) > 0.1 * batch_size:
+    if not no_warning and \
+            torch.sum(cv_Ab[cv_Ab > 0]) + torch.sum(cv_Cd[cv_Cd > 0]) + torch.sum(cv_Ef[cv_Ef > 0]) > 0.1 * batch_size:
         print('Warning: non-zero constraint violation within max iterations. Add more iterations or infeasible?',
               file=sys.stderr)
 
