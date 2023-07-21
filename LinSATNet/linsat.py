@@ -96,7 +96,8 @@ def linsat_layer(x, A=None, b=None, C=None, d=None, E=None, f=None, tau=0.05, ma
         raise ValueError(f'Unknown mode {mode}')
 
     x = kernel(x, A, b, tau, max_iter, dummy_val,
-               batch_size, num_var, num_constr, ori_A, ori_b, ori_C, ori_d, ori_E, ori_f)
+               batch_size, num_var, num_constr, ori_A, ori_b, ori_C, ori_d, ori_E, ori_f,
+               no_warning)
 
     if vector_input:
         x.squeeze_(0)
@@ -104,7 +105,8 @@ def linsat_layer(x, A=None, b=None, C=None, d=None, E=None, f=None, tau=0.05, ma
 
 
 def linsat_kernel_v1(x, A, b, tau, max_iter, dummy_val,
-                     batch_size, num_var, num_constr, ori_A, ori_b, ori_C, ori_d, ori_E, ori_f):
+                     batch_size, num_var, num_constr, ori_A, ori_b, ori_C, ori_d, ori_E, ori_f,
+                     no_warning):
     # add dummy variables
     dum_x1 = []
     dum_x2 = []
@@ -173,7 +175,8 @@ def linsat_kernel_v1(x, A, b, tau, max_iter, dummy_val,
 
 
 def linsat_kernel_v2(x, A, b, tau, max_iter, dummy_val,
-                     batch_size, num_var, num_constr, ori_A, ori_b, ori_C, ori_d, ori_E, ori_f):
+                     batch_size, num_var, num_constr, ori_A, ori_b, ori_C, ori_d, ori_E, ori_f,
+                     no_warning):
     # add dummy variables
     dum_x1 = []
     for j in range(num_constr):
@@ -235,7 +238,8 @@ def linsat_kernel_v2(x, A, b, tau, max_iter, dummy_val,
         cv_Ab = torch.matmul(ori_A, x.t()).t() - ori_b.unsqueeze(0)
         cv_Cd = -torch.matmul(ori_C, x.t()).t() + ori_d.unsqueeze(0)
         cv_Ef = torch.abs(torch.matmul(ori_E, x.t()).t() - ori_f.unsqueeze(0))
-        if torch.sum(cv_Ab[cv_Ab > 0]) + torch.sum(cv_Cd[cv_Cd > 0]) + torch.sum(cv_Ef[cv_Ef > 0]) > 0.1 * batch_size:
+        if not no_warning and \
+                torch.sum(cv_Ab[cv_Ab > 0]) + torch.sum(cv_Cd[cv_Cd > 0]) + torch.sum(cv_Ef[cv_Ef > 0]) > 0.1 * batch_size:
             print('Warning: non-zero constraint violation within max iterations. Add more iterations or infeasible?',
                   file=sys.stderr)
 
