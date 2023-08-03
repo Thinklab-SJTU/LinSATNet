@@ -357,13 +357,14 @@ constraints.
 
 The Traveling Salesman Problem (TSP) is a classic NP-hard problem. The standard
 TSP aims at finding a cycle visiting all cities with minimal length, and
-developing neural solvers for TSP receives increasing interes. Beyond standard
+developing neural solvers for TSP receives increasing interests. Beyond standard
 TSP, here we develop a neural solver for TSP with extra constraints using LinSAT
 layer.
 
 **Contributing author: Yunhao Zhang**
 
-Details will be updated soon.
+To run the TSP experiment, please follow the code and instructions in
+[``TSP_exp/``](TSP_exp).
 
 ### II. Partial Graph Matching with Outliers on Both Sides
 
