@@ -1,5 +1,5 @@
 # Case Study I: Neural Solver for Traveling Salesman Problem with Extra Constraints
-The Traveling Salesman Problem (TSP) is a classic NP-hard problem. The standard TSP aims at finding a cycle visiting all cities with minimal length. Beyond standard TSP, in this case study, we develop a neural solver for TSP with extra constraints using LinSAT layer.
+The Traveling Salesman Problem (TSP) is a classic NP-hard problem. The standard TSP aims at finding a cycle visiting all cities with minimal length. Beyond standard TSP, in this case study, we develop a neural solver for TSP with extra constraints using LinSATNet layer.
 
 ## TSP-SE and TSP-PRI
 We consider 1) TSP with starting and ending cities constraint
@@ -12,18 +12,23 @@ We consider 1) TSP with starting and ending cities constraint
 <b>Left</b>: TSP-SE: one needs to find the shortest tour starting from the black node, visiting other nodes exactly once, and ending in the orange node; <b>Right</b>: TSP-PRI: besides the starting and ending nodes, the priority node (i.e. red one) has to be visited within 5 steps starting from the black node.
 </p>
 
-In **TSP-SE**, the salesman is given a starting city $s$ and a ending city $e$. The salesman needs to find the shortest tour starting from city $s$, visiting other cities exactly once, and ending in city $e$. TSP-SE can be converted to standard TSP by adding a dummy node. The distance from the dummy node to starting and ending nodes is 0 and the distance to other nodes is infinity. Then we can use start-of-the-art methods for standard TSP to solve TSP-SE.
+In **TSP-SE**, the salesman is given a starting city $s$ and an ending city $e$. The salesman needs to find the shortest tour starting from city $s$, visiting other cities exactly once, and ending in city $e$. TSP-SE can be converted to standard TSP by adding a dummy node. The distance from the dummy node to starting and ending nodes is 0 and the distance to other nodes is infinity. Then we can use start-of-the-art methods for standard TSP to solve TSP-SE.
 
-In **TSP-PRI**, besides the starting and ending cities, the salesman is also given a priority city $p$ that has to be visited within $m$ steps starting from begining.   Converting TSP-PRI to standard TSP is non-trivial, **making it hard to use standard solvers to solve TSP-PRI**.
+In **TSP-PRI**, besides the starting and ending cities, the salesman is also given a priority city $p$ that has to be visited within $m$ steps starting from beginning.   Converting TSP-PRI to standard TSP is non-trivial, **making it hard to use standard solvers to solve TSP-PRI**.
 
 ## Constraint Formulation with LinSATNet
 Given the starting and ending cities $s, e \in \{1, ... , n\}$. The distance matrix $\mathbf{D}$ records the distances between city pairs. We use $\mathbf{X} \in \{0, 1\}^{n \times n}$ as our decision variable, **where $X_{i, k} = 1$ indicates city $i$ is the $k$-th visited city in the tour**. Then TSP-SE can be formulated with the following objective function and constraints:
 
 $$\min_\mathbf{X}\sum_{i = 1}^n\sum_{j = 1}^nD_{i,j}\sum_{k = 1}^{n-1}X_{i, k}X_{j, k+1}$$
+
 s.t.
+
 $$\sum_{i = 1}^nX_{i,k}=1, \forall k \in \{1, ... , n\}$$
+
 $$\sum_{k = 1}^nX_{i,k}=1, \forall i \in \{1, ... , n\}$$
+
 $$X_{s,1} = 1, X_{e,n} = 1$$
+
 $$X_{i, k} \in \{0, 1\}, \forall i,k \in \{1, ... , n\}$$
 
 For TSP-PRI, we need one more constraint to ensure city $p$ is visited within the first $m$ steps:
