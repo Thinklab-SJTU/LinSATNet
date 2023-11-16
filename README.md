@@ -81,7 +81,7 @@ w = w.requires_grad_(True)
 ```
 
 We also have a "ground-truth target" for the output of ``linsat_layer``, which
-is an orthogonal matrix in this example:
+is an diagonal matrix in this example:
 ```python
 x_gt = torch.tensor(
     [1, 0, 0,
