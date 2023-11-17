@@ -5,5 +5,5 @@
 # Code author: Runzhong Wang (runzhong.wang@outlook.com)
 
 from .linsat import linsat_layer
-__version__ = '0.0.8'
+__version__ = '0.0.9'
 __author__ = 'Runzhong Wang'
