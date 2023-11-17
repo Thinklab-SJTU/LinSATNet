@@ -100,7 +100,7 @@ def linsat_layer(x, A=None, b=None, C=None, d=None, E=None, f=None, tau=0.05, ma
                no_warning)
 
     if vector_input:
-        x.squeeze_(0)
+        x = x.squeeze(0)
     return x
 
 
@@ -273,13 +273,14 @@ if __name__ == '__main__':
     )
 
     # Test with LinSAT
-    prev_time = time.time()
-    linsat_outp = linsat_layer(w, E=E, f=f, tau=0.1, max_iter=10, dummy_val=0)
-    print(f'LinSAT forward time: {time.time() - prev_time:.4f}')
-    prev_time = time.time()
-    loss = ((linsat_outp - x_gt) ** 2).sum()
-    loss.backward()
-    print(f'LinSAT backward time: {time.time() - prev_time:.4f}')
+    with torch.autograd.set_detect_anomaly(True):
+        prev_time = time.time()
+        linsat_outp = linsat_layer(w, E=E, f=f, tau=0.1, max_iter=10, dummy_val=0)
+        print(f'LinSAT forward time: {time.time() - prev_time:.4f}')
+        prev_time = time.time()
+        loss = ((linsat_outp - x_gt) ** 2).sum()
+        loss.backward()
+        print(f'LinSAT backward time: {time.time() - prev_time:.4f}')
 
     # Test gradient-based optimization
     niters = 10
