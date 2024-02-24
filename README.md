@@ -134,7 +134,7 @@ pip install linsatnet
 ```
 and import the pacakge at the beginning of your code:
 ```python
-from LinSATNet import linsat_layer
+from LinSATNet import linsat_layer, init_constraints
 ```
 
 ### The ``linsat_layer`` function
@@ -149,8 +149,12 @@ and all elements in $\mathbf{A}, \mathbf{b}, \mathbf{C}, \mathbf{d}, \mathbf{E},
 * ``x``: PyTorch tensor of size ($n_v$), it can optionally have a batch size ($b \times n_v$)
 * ``A``, ``C``, ``E``: PyTorch tensor of size ($n_c \times n_v$), constraint matrix on the left hand side
 * ``b``, ``d``, ``f``: PyTorch tensor of size ($n_c$), constraint vector on the right hand side
+* ``constr_dict``: a dictionary with initialized constraint information, which is the output of the function
+        ``LinSATNet.init_constraints``. Specifying this variable could avoid re-initializing the constraints for the same
+        constraints and improve the efficiency
 * ``tau``: (``default=0.05``) parameter to control the discreteness of the projection. Smaller value leads to more discrete (harder) results, larger value leads to more continuous (softer) results.
 * ``max_iter``: (``default=100``) max number of iterations
+*  ``grouped``: (``default=True``) group constraints for better efficiency
 * ``dummy_val``: (``default=0``) the value of dummy variables appended to the input vector
 * ``mode``: (``default='v1'``) EXPERIMENTAL the mode of LinSAT kernel. ``v2`` is sometimes faster than ``v1``.
 * ``no_warning``: (``default=False``) turn off warning message

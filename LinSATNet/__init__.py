@@ -4,6 +4,6 @@
 #
 # Code author: Runzhong Wang (runzhong.wang@outlook.com)
 
-from .linsat import linsat_layer
+from .linsat import linsat_layer, init_constraints
 __version__ = '0.0.9'
 __author__ = 'Runzhong Wang'
