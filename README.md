@@ -156,7 +156,8 @@ and all elements in $\mathbf{A}, \mathbf{b}, \mathbf{C}, \mathbf{d}, \mathbf{E},
 * ``max_iter``: (``default=100``) max number of iterations
 *  ``grouped``: (``default=True``) group constraints for better efficiency
 * ``dummy_val``: (``default=0``) the value of dummy variables appended to the input vector
-* ``mode``: (``default='v1'``) EXPERIMENTAL the mode of LinSAT kernel. ``v2`` is sometimes faster than ``v1``.
+* ``mode``: (``default='v2'``) LinSAT kernel implementation. ``v1`` is the one came with the ICML paper, ``v2``
+        is the improved version with (usually) better efficiency
 * ``no_warning``: (``default=False``) turn off warning message
 
 **return:** PyTorch tensor of size ($n_v$) or ($b \times n_v$), the projected variables
