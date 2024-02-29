@@ -7,6 +7,12 @@ With LinSATNet, you can enforce the satisfiability of general **positive linear 
 
 ![usecase](https://github.com/Thinklab-SJTU/LinSATNet/blob/main/figures/usecase.png?raw=true)
 
+![News](https://img.shields.io/badge/news!-03e8fc) 
+LinSATNet supports sparse constraints starting ``v0.1.1``! The forward and backward should be identical to the dense 
+version, but the sparse version is expected to be more efficient in time and GPU memory.
+
+------------------------------
+
 The LinSAT layer is fully differentiable, and the gradients are exactly computed. Our implementation now supports PyTorch.
 
 You can install it by
@@ -104,6 +110,12 @@ loss = ((linsat_outp - x_gt) ** 2).sum()
 loss.backward()
 ```
 
+You can also set ``E`` as a sparse matrix to improve the time & memory efficiency
+(especially for large-sized input):
+```python
+linsat_outp = linsat_layer(w, E=E.to_sparse(), f=f, tau=0.1, max_iter=10, dummy_val=0)
+```
+
 We can also do gradient-based optimization over ``w`` to make the output of
 ``linsat_layer`` closer to ``x_gt``. This is what's happening when you train a
 neural network.
@@ -138,7 +150,7 @@ from LinSATNet import linsat_layer, init_constraints
 ```
 
 ### The ``linsat_layer`` function
-> **LinSATNet.linsat_layer**(x, A=None, b=None, C=None, d=None, E=None, f=None, tau=0.05, max_iter=100, dummy_val=0, mode='v1', no_warning=False) [[source]](https://github.com/Thinklab-SJTU/LinSATNet/blob/main/LinSATNet/linsat.py#L11)
+> **LinSATNet.linsat_layer**(x, A=None, b=None, C=None, d=None, E=None, f=None, constr_dict=None, tau=0.05, max_iter=100, dummy_val=0, mode='v2', grouped=True, no_warning=False) [[source]](https://github.com/Thinklab-SJTU/LinSATNet/blob/main/LinSATNet/linsat.py#L11)
 
 LinSAT layer enforces positive linear constraints to the input ``x`` and
 projects it with the constraints
@@ -154,10 +166,10 @@ and all elements in $\mathbf{A}, \mathbf{b}, \mathbf{C}, \mathbf{d}, \mathbf{E},
         constraints and improve the efficiency
 * ``tau``: (``default=0.05``) parameter to control the discreteness of the projection. Smaller value leads to more discrete (harder) results, larger value leads to more continuous (softer) results.
 * ``max_iter``: (``default=100``) max number of iterations
-*  ``grouped``: (``default=True``) group constraints for better efficiency
 * ``dummy_val``: (``default=0``) the value of dummy variables appended to the input vector
 * ``mode``: (``default='v2'``) LinSAT kernel implementation. ``v1`` is the one came with the ICML paper, ``v2``
         is the improved version with (usually) better efficiency
+*  ``grouped``: (``default=True``) group non-overlapping constraints in one operation for better efficiency
 * ``no_warning``: (``default=False``) turn off warning message
 
 **return:** PyTorch tensor of size ($n_v$) or ($b \times n_v$), the projected variables
@@ -179,6 +191,9 @@ work, but ``A x <= 0.999`` works.
 4. The input vector ``x`` may have a batch dimension, but the constraints can
 not have a batch dimension. The constraints should be consistent for all data in
 one batch.
+5. Input constraints as sparse tensors can usually help you save GPU memory. When 
+working with sparse constraints, ``A``, ``C``, ``E`` should be 
+``torch.sparse_coo_tensor``, and ``b``, ``d``, ``f`` should be dense tensors.
 
 ## How it works?
 

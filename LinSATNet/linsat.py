@@ -23,7 +23,7 @@ def linsat_layer(x, A=None, b=None, C=None, d=None, E=None, f=None, constr_dict=
     :param tau: parameter to control hard/soft constraint
     :param max_iter: max number of iterations
     :param dummy_val: value of dummy variable
-    :param grouped: group constraints for better efficiency
+    :param grouped: group non-overlapping constraints in one operation for better efficiency
     :param mode: v1 or v2
     :param no_warning: turn off warning message
     :return: (n_v) or (b x n_v), the projected variables
