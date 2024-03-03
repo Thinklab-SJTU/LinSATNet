@@ -41,6 +41,9 @@ def linsat_layer(x, A=None, b=None, C=None, d=None, E=None, f=None, constr_dict=
 
     if constr_dict is None:
         constr_dict = init_constraints(num_var, A, b, C, d, E, f, grouped)
+    if not type(constr_dict) is dict:
+        raise TypeError(f'If you specify argument constr_dict, it must be a dictionary returned by init_constraints()! '
+                        f'Got {type(constr_dict)} instead.')
 
     param_dict = {'tau': tau, 'max_iter': max_iter, 'dummy_val': dummy_val, 'batch_size': batch_size,
                   'num_var': num_var, 'no_warning': no_warning}
