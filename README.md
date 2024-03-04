@@ -431,7 +431,7 @@ To run the portfolio experiment, please follow the code and instructions in
 If you find our paper/code useful in your research, please cite
 ```
 @inproceedings{WangICML23,
-  title={LinSATNet: The Positive Linear Satisfiability Neural Networks},
+  title={{LinSATNet}: The Positive Linear Satisfiability Neural Networks},
   author={Wang, Runzhong and Zhang, Yunhao and Guo, Ziao and Chen, Tianyi and Yang, Xiaokang and Yan, Junchi},
   booktitle={International Conference on Machine Learning (ICML)},
   year={2023}
