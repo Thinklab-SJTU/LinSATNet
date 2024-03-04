@@ -9,7 +9,8 @@ With LinSATNet, you can enforce the satisfiability of general **positive linear 
 
 ![News](https://img.shields.io/badge/news!-03e8fc) 
 LinSATNet supports sparse constraints starting ``v0.1.1``! The forward and backward should be identical to the dense 
-version, but the sparse version is expected to be more efficient in time and GPU memory.
+version, but the sparse version is expected to be more efficient in time and GPU memory. Upgrade by 
+``pip install --upgrade linsatnet``
 
 ------------------------------
 
