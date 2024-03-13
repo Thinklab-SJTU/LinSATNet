@@ -469,12 +469,12 @@ def _init_shape(mat, vec, num_var, num_constr, device, is_sparse):
     """
     if mat is not None:
         if vec is None: raise ValueError('You must specify A-b, C-d, E-f together in pairs!')
-        if not mat.is_sparse: raise ValueError('Constraint matrices must be all dense or all sparse!')
         if vec.is_sparse: raise ValueError('Constraint can only be dense-dense or sparse-dense pairs!')
         if torch.any(vec < 0): raise ValueError('All constraints must be non-negative!')
 
         if is_sparse:
             if mat.layout != torch.sparse_coo: raise ValueError('Only sparse_coo Tensors are supported!')
+            if not mat.is_sparse: raise ValueError('Constraint matrices must be all dense or all sparse!')
             if torch.any(mat.values() < 0): raise ValueError('All constraints must be non-negative!')
             if len(mat.values()) == 0: raise ValueError('All-zero constraint is found!')
         else:
