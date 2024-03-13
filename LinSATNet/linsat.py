@@ -104,7 +104,7 @@ def init_constraints(num_var, A=None, b=None, C=None, d=None, E=None, f=None, gr
         ), dim=-1)  # n_c_a x (n_v + n_c), each constraint has a dummy var
         b = torch.stack((ori_b, _sum_dim(ori_A, dim=-1)), dim=-1)  # n_c x 2
 
-        gamma = torch.floor(_sum_dim(ori_C, dim=-1) / ori_d)
+        gamma = torch.floor(_sum_dim(ori_C, dim=-1) / (ori_d + 1e-4))
         if is_sparse:
             dummy_C = torch.sparse_coo_tensor(torch.arange(ori_d.shape[0], device=ori_C.device)[None, :].repeat(2, 1), gamma * ori_d,
                                               [ori_d.shape[0], ori_d.shape[0]])
@@ -127,12 +127,16 @@ def init_constraints(num_var, A=None, b=None, C=None, d=None, E=None, f=None, gr
         A = torch.cat((A, b.unsqueeze(-1)), dim=-1) # n_c x n_v
         b = torch.stack((b, A[:, :-1].sum(dim=-1)), dim=-1) # n_c x 2
 
-        gamma = torch.floor(C.sum(dim=-1) / d)
+        gamma = torch.floor(C.sum(dim=-1) / (d + 1e-4))
         C = torch.cat((C, (gamma * d).unsqueeze(-1)), dim=-1) # n_c x n_v
         d = torch.stack(((gamma + 1) * d, C[:, :-1].sum(dim=-1) - d), dim=-1) # n_c x 2
 
         E = torch.cat((E, torch.zeros_like(f).unsqueeze(-1)), dim=-1) # n_c x n_v
         f = torch.stack((f, E[:, :-1].sum(dim=-1) - f), dim=-1) # n_c x 2
+
+    if torch.any(d < 0) or torch.any(f < 0):
+        raise ValueError('Negative elements encountered during constraint construction and your constraints are '
+                         'infeasible. Please be careful that variables are defined to be in the range of [0, 1].')
 
     # merge constraints
     A = torch.cat((A, C, E), dim=0) # n_c x n_v
@@ -465,6 +469,7 @@ def _init_shape(mat, vec, num_var, num_constr, device, is_sparse):
     """
     if mat is not None:
         if vec is None: raise ValueError('You must specify A-b, C-d, E-f together in pairs!')
+        if not mat.is_sparse: raise ValueError('Constraint matrices must be all dense or all sparse!')
         if vec.is_sparse: raise ValueError('Constraint can only be dense-dense or sparse-dense pairs!')
         if torch.any(vec < 0): raise ValueError('All constraints must be non-negative!')
 
