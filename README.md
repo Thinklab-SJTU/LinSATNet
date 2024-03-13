@@ -1,7 +1,7 @@
 # LinSATNet
 This is the official implementation of our ICML 2023 paper "LinSATNet: The Positive Linear Satisfiability Neural Networks".
 
-* [[paper]](https://runzhong.wang/files/icml2023_LinSATNet.pdf)
+* [[paper]](https://proceedings.mlr.press/v202/wang23at/wang23at.pdf)
 
 With LinSATNet, you can enforce the satisfiability of general **positive linear constraints** to the output of neural networks.
 
@@ -203,7 +203,7 @@ Sinkhorn algorithm to multiple sets of marginals (to our best knowledge, we are
 the first to study Sinkhorn with multi-sets of marginals). The positive linear
 constraints are then enforced by transforming the constraints into marginals.
 For more details and formal proofs, please refer to
-[our paper](https://runzhong.wang/files/icml2023_LinSATNet.pdf).
+[our paper](https://proceedings.mlr.press/v202/wang23at/wang23at.pdf).
 
 ### Classic Sinkhorn with single-set marginals
 
@@ -218,7 +218,7 @@ $$\sum_{i=1}^m \Gamma_{i,j}u_{j}=u_j, \sum_{j=1}^n \Gamma_{i,j}u_{j}=v_i.$$
 Conceptually, $`\Gamma_{i,j}`$ means the **proportion** of $`u_j`$ moved to $`v_i`$.
 
 > If you are seeing the math formulas not rendered correctly, it is [an issue of github](https://github.com/orgs/community/discussions/17051).
-> Please refer to [our main paper](https://runzhong.wang/files/icml2023_LinSATNet.pdf) for better view.
+> Please refer to [our main paper](https://proceedings.mlr.press/v202/wang23at/wang23at.pdf) for better view.
 
 The algorithm steps are:
 
@@ -295,7 +295,7 @@ $`\qquad`$**end for**
 
 $`\quad`$**until** convergence.
 
-In [our paper](https://runzhong.wang/files/icml2023_LinSATNet.pdf), we prove
+In [our paper](https://proceedings.mlr.press/v202/wang23at/wang23at.pdf), we prove
 that the Sinkhorn algorithm for multi-set marginals shares the same convergence
 pattern with the classic Sinkhorn, and its underlying formulation is also
 similar to the classic Sinkhorn.
