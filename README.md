@@ -183,16 +183,17 @@ Notations:
 ### Some practical notes
 
 1. You must ensure that your input constraints have a non-empty feasible space.
-Otherwise, ``linsat_layer`` will not converge.
-2. You may tune the value of ``tau`` for your specific tasks. Monitor the output
+Otherwise, ``linsat_layer`` will not converge. It is also worth noting that
+``x`` is in the range of ``[0, 1]``, and you may add a multiplier to scale it.
+3. You may tune the value of ``tau`` for your specific tasks. Monitor the output
 of LinSAT so that the "smoothness" of the output meets your task. Reasonable
 choices of ``tau`` may range from ``1e-4`` to ``100`` in our experience.
-3. Be careful of potential numerical issues. Sometimes ``A x <= 1`` does not
+4. Be careful of potential numerical issues. Sometimes ``A x <= 1`` does not
 work, but ``A x <= 0.999`` works.
-4. The input vector ``x`` may have a batch dimension, but the constraints can
+5. The input vector ``x`` may have a batch dimension, but the constraints can
 not have a batch dimension. The constraints should be consistent for all data in
 one batch.
-5. Input constraints as sparse tensors can usually help you save GPU memory. When 
+6. Input constraints as sparse tensors can usually help you save GPU memory. When 
 working with sparse constraints, ``A``, ``C``, ``E`` should be 
 ``torch.sparse_coo_tensor``, and ``b``, ``d``, ``f`` should be dense tensors.
 
