@@ -147,7 +147,7 @@ def init_constraints(num_var, A=None, b=None, C=None, d=None, E=None, f=None, gr
         b += 1e-7  # handle numerical issue
 
     # normalize values
-    if not torch.all(torch.abs(_sum_dim(A, dim=-1) - b.sum(dim=-1)) < 1e-4):
+    if not (torch.abs(_sum_dim(A, dim=-1) - b.sum(dim=-1)) / b.sum(dim=-1)).max() < 1e-4:
         raise RuntimeError('Marginal distributions are not matched! Please report this issue on GitHub.')
     A = _elem_div(A, _sum_dim(A, dim=-1), dim=-1)
     b = b / b.sum(dim=-1, keepdim=True)
