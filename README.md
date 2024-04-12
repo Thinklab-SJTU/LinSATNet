@@ -237,7 +237,7 @@ $`\quad`$**until** convergence.
 > Note that the above formulation is modified from the conventional Sinkhorn
 formulation. $`\Gamma_{i,j}u_j`$ is equivalent to the elements in the "transport"
 matrix in papers such as [(Cuturi 2013)](https://arxiv.org/pdf/1306.0895v1.pdf).
-We prefer this new formulation as it generalize smoothly to Sinkhorn with
+We prefer this new formulation as it generalizes smoothly to Sinkhorn with
 multi-set marginals in the following.
 >
 > To make a clearer comparison, the transportation matrix in [(Cuturi 2013)](https://arxiv.org/pdf/1306.0895v1.pdf)
@@ -370,7 +370,7 @@ marginals.
 \mathbf{v}_e^\top = \left[f \quad \sum_{i=1}^l e_i - f \right]
 ```
 
-After encoding all constraints and stack them as multiple sets of marginals,
+After encoding all constraints and stacking them as multiple sets of marginals,
 we can call the Sinkhorn algorithm for multi-set marginals to enforce the
 constraints.
 
