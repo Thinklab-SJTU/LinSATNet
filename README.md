@@ -88,7 +88,7 @@ w = w.requires_grad_(True)
 ```
 
 We also have a "ground-truth target" for the output of ``linsat_layer``, which
-is an diagonal matrix in this example:
+is a diagonal matrix in this example:
 ```python
 x_gt = torch.tensor(
     [1, 0, 0,
@@ -112,13 +112,14 @@ loss.backward()
 ```
 
 You can also set ``E`` as a sparse matrix to improve the time & memory efficiency
-(especially for large-sized input):
+(especially for large-sized input). Here is a dumb example (consider to construct 
+E in sparse for the best efficiency):
 ```python
 linsat_outp = linsat_layer(w, E=E.to_sparse(), f=f, tau=0.1, max_iter=10, dummy_val=0)
 ```
 
 We can also do gradient-based optimization over ``w`` to make the output of
-``linsat_layer`` closer to ``x_gt``. This is what's happening when you train a
+``linsat_layer`` closer to ``x_gt``. This is what happens when you train a
 neural network.
 ```python
 niters = 10
@@ -137,7 +138,7 @@ for i in range(niters):
           f'  x={x},\n'
           f'  constraint violation={cv}')
 ```
-And you are likely to see the loss decreasing during the gradient steps.
+And you are likely to see the loss decreasing during the training steps.
 
 ## API Reference
 
